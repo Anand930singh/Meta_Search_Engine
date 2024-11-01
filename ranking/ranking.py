@@ -23,9 +23,33 @@ def remove_duplicates(results):
 
     return unique_results
 
+# 2. Compute Relevance Score (TF-IDF + Semantic Matching)
+def compute_relevance(query, result):
+    # TF-IDF relevance score
+    vectorizer = TfidfVectorizer()
+    tfidf_matrix = vectorizer.fit_transform([query, result['title'] + " " + result['snippet']])
+    tfidf_score = (tfidf_matrix[0] * tfidf_matrix[1].T).toarray()[0][0]
+
+    # Semantic similarity score
+    query_embedding = model.encode(query)
+    result_embedding = model.encode(result['title'] + " " + result['snippet'])
+    semantic_score = util.cos_sim(query_embedding, result_embedding).item()
+
+    # Final relevance score (weighted average)
+    return 0.5 * tfidf_score + 0.5 * semantic_score
 
 
-
+# 3. Compute Authority Score (Source + Position-Based)
+def compute_authority(result):
+    # Weights for sources to reflect authority
+    source_weight = {
+        "google": 1.2,
+        # "Bing": 1.1,
+        "duckduckgo": 1.1
+    }
+    # Position-based scoring: top positions get higher authority scores
+    position_score = max(1, 10 - result['index']) / 10
+    return source_weight.get(result['index'], 1) * position_score
 
 # 4. Rerank Results
 def rerank_results(query, results):
@@ -48,7 +72,7 @@ def rerank_results(query, results):
 
 
 # 5. Run the Algorithm with Example Query and Results
-query = "school"
+query = "coffee"
 with open('test.json', 'r') as file:
     results = json.load(file)
 
