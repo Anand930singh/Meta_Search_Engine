@@ -9,42 +9,36 @@ const MetaSearch = () => {
   const [selectedEngines, setSelectedEngines] = useState({
     google: true,
     bing: true,
-    duckduckgo: true
+    duckduckgo: true,
   });
+  const [currentPage, setCurrentPage] = useState(1);
+  const resultsPerPage = 10;
 
   const searchEngines = [
     { id: 'google', name: 'Google' },
-    { id: 'bing', name: 'Bing' },
-    { id: 'duckduckgo', name: 'DuckDuckGo' }
+    { id: 'duckduckgo', name: 'DuckDuckGo' },
   ];
 
   const mockSearch = async () => {
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const mockResults = [
-      {
-        title: 'Sample Result 1',
-        description: 'This is a description for the first search result that matches your query.',
-        url: 'https://example.com/1',
-        engine: 'google'
-      },
-      {
-        title: 'Sample Result 2',
-        description: 'Another relevant search result from a different search engine.',
-        url: 'https://example.com/2',
-        engine: 'bing'
-      },
-      {
-        title: 'Sample Result 3',
-        description: 'A third search result from yet another search engine.',
-        url: 'https://example.com/3',
-        engine: 'duckduckgo'
-      }
-    ];
-    
-    setResults(mockResults);
-    setLoading(false);
+    try {
+      const response = await fetch('http://127.0.0.1:5000/submit', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query }),
+      });
+
+      const data = await response.json();
+      setResults(data.results);
+      setCurrentPage(1); // Reset to first page on new search
+    } catch (error) {
+      console.error('Error fetching data');
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSearch = (e) => {
@@ -55,11 +49,19 @@ const MetaSearch = () => {
   };
 
   const toggleEngine = (engineId) => {
-    setSelectedEngines(prev => ({
+    setSelectedEngines((prev) => ({
       ...prev,
-      [engineId]: !prev[engineId]
+      [engineId]: !prev[engineId],
     }));
   };
+
+  const handlePageChange = (pageNumber) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const indexOfLastResult = currentPage * resultsPerPage;
+  const indexOfFirstResult = indexOfLastResult - resultsPerPage;
+  const currentResults = results.slice(indexOfFirstResult, indexOfLastResult);
 
   return (
     <div className={styles.container}>
@@ -98,7 +100,7 @@ const MetaSearch = () => {
 
         {/* Search Engine Toggles */}
         <div className={styles.engineToggles}>
-          {searchEngines.map(engine => (
+          {searchEngines.map((engine) => (
             <button
               key={engine.id}
               onClick={() => toggleEngine(engine.id)}
@@ -118,25 +120,46 @@ const MetaSearch = () => {
               <Loader2 className="animate-spin" />
             </div>
           ) : (
-            results.map((result, index) => (
+            currentResults.map((result, index) => (
               <div key={index} className={styles.resultCard}>
-                <div className={`${styles.engineLabel} ${styles[result.engine]}`}>
-                  {result.engine.charAt(0).toUpperCase() + result.engine.slice(1)}
+                <div
+                  className={`${styles.engineLabel} ${styles[result.source]}`}
+                >
+                  {result.source.charAt(0).toUpperCase() + result.source.slice(1)}
                 </div>
                 <a
-                  href={result.url}
+                  href={result.link}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={styles.resultTitle}
-                >
-                  {result.title}
-                </a>
-                <p className={styles.resultDescription}>{result.description}</p>
-                <p className={styles.resultUrl}>{result.url}</p>
+                  dangerouslySetInnerHTML={{ __html: result.title }}
+                />
+                <p className={styles.resultDescription}>{result.snippet}</p>
+                <p className={styles.resultUrl}>{result.link}</p>
               </div>
             ))
           )}
         </div>
+
+        {/* Pagination Controls */}
+        {results.length > resultsPerPage && (
+          <div className={styles.pagination}>
+            {Array.from(
+              { length: Math.ceil(results.length / resultsPerPage) },
+              (_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => handlePageChange(i + 1)}
+                  className={`${styles.pageButton} ${
+                    currentPage === i + 1 ? styles.active : ''
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              )
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

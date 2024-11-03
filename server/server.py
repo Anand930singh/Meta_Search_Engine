@@ -3,8 +3,10 @@ import http.client
 import json
 import urllib.parse
 from serpapi import GoogleSearch
+from flask_cors import CORS
 
 app = Flask(__name__)
+CORS(app)
 
 # Google Search API headers
 headers_google = {
@@ -68,7 +70,7 @@ def submit():
     combined_results = {
         "results":google_results_filtered
     }
-
+    
     return jsonify(combined_results)
 
 if __name__ == '__main__':

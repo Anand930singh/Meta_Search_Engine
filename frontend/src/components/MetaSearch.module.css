@@ -185,9 +185,39 @@
 .resultDescription {
   color: #d1d5db;
   margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 8px 0;
+  line-height: 1.5;
 }
 
 .resultUrl {
   font-size: 0.875rem;
   color: #6b7280;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.pageButton {
+  margin: 0 5px;
+  padding: 5px 10px;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  cursor: pointer;
+}
+
+.pageButton:hover {
+  background-color: #f0f0f0;
+}
+
+.pageButton.active {
+  background-color: #0070f3;
+  color: #fff;
+  border-color: #0070f3;
 }
