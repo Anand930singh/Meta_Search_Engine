@@ -6,18 +6,8 @@ const MetaSearch = () => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [selectedEngines, setSelectedEngines] = useState({
-    google: true,
-    bing: true,
-    duckduckgo: true,
-  });
   const [currentPage, setCurrentPage] = useState(1);
   const resultsPerPage = 10;
-
-  const searchEngines = [
-    { id: 'google', name: 'Google' },
-    { id: 'duckduckgo', name: 'DuckDuckGo' },
-  ];
 
   const mockSearch = async () => {
     setLoading(true);
@@ -31,8 +21,9 @@ const MetaSearch = () => {
       });
 
       const data = await response.json();
+      console.log("DATA", data);
       setResults(data.results);
-      setCurrentPage(1); // Reset to first page on new search
+      setCurrentPage(1);
     } catch (error) {
       console.error('Error fetching data');
       setResults([]);
@@ -46,13 +37,6 @@ const MetaSearch = () => {
     if (query.trim()) {
       mockSearch();
     }
-  };
-
-  const toggleEngine = (engineId) => {
-    setSelectedEngines((prev) => ({
-      ...prev,
-      [engineId]: !prev[engineId],
-    }));
   };
 
   const handlePageChange = (pageNumber) => {
@@ -98,21 +82,6 @@ const MetaSearch = () => {
           </div>
         </form>
 
-        {/* Search Engine Toggles */}
-        <div className={styles.engineToggles}>
-          {searchEngines.map((engine) => (
-            <button
-              key={engine.id}
-              onClick={() => toggleEngine(engine.id)}
-              className={`${styles.engineButton} ${
-                selectedEngines[engine.id] ? styles.active : ''
-              } ${styles[engine.id]}`}
-            >
-              {engine.name}
-            </button>
-          ))}
-        </div>
-
         {/* Results Section */}
         <div className={styles.resultsWrapper}>
           {loading ? (
@@ -122,11 +91,6 @@ const MetaSearch = () => {
           ) : (
             currentResults.map((result, index) => (
               <div key={index} className={styles.resultCard}>
-                <div
-                  className={`${styles.engineLabel} ${styles[result.source]}`}
-                >
-                  {result.source.charAt(0).toUpperCase() + result.source.slice(1)}
-                </div>
                 <a
                   href={result.link}
                   target="_blank"

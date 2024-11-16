@@ -4,6 +4,7 @@ import json
 import urllib.parse
 from serpapi import GoogleSearch
 from flask_cors import CORS
+from ranking.ranking import return_results as rf 
 
 app = Flask(__name__)
 CORS(app)
@@ -19,19 +20,23 @@ headers_google = {
 @app.route('/submit', methods=['POST'])
 def submit():
     # global index
+    
     data = request.get_json()
     if not data or 'query' not in data:
         return jsonify({"error": "JSON body with 'query' field is required"}), 400
 
+    
     query = data['query']
+   
     encoded_query = urllib.parse.quote(query)
-
+    
     # Google Search
     conn = http.client.HTTPSConnection("google-search72.p.rapidapi.com")
     conn.request("GET", f"/search?q={encoded_query}&lr=en-IN&num=10", headers=headers_google)
     res_google = conn.getresponse()
+    
     raw_data_google = res_google.read()
-
+    
     # DuckDuckGo Search
     params = {
         "api_key": "09ea60bb38a064c32931c85dec18237f9e6188a3c5fd7c13ca4955b6f869d75b",
@@ -39,9 +44,10 @@ def submit():
         "q": query,
         "kl": "in-en"
     }
+    
     search = GoogleSearch(params)
     results_duckduckgo = search.get_dict()
-
+    
     # Decode and parse the Google search results
     try:
         results_google = json.loads(raw_data_google.decode("utf-8"))
@@ -70,8 +76,9 @@ def submit():
     combined_results = {
         "results":google_results_filtered
     }
-    
-    return jsonify(combined_results)
+
+    output_results = rf(query, combined_results)
+    return jsonify(output_results)
 
 if __name__ == '__main__':
     app.run(debug=True)
