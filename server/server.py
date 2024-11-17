@@ -4,7 +4,7 @@ import json
 import urllib.parse
 from serpapi import GoogleSearch
 from flask_cors import CORS
-from ranking.ranking import return_results as rf 
+import ranking_final as rf
 
 app = Flask(__name__)
 CORS(app)
@@ -38,16 +38,25 @@ def submit():
     raw_data_google = res_google.read()
     
     # DuckDuckGo Search
-    params = {
+    ddg_params = {
         "api_key": "09ea60bb38a064c32931c85dec18237f9e6188a3c5fd7c13ca4955b6f869d75b",
         "engine": "duckduckgo",
         "q": query,
         "kl": "in-en"
     }
-    
-    search = GoogleSearch(params)
-    results_duckduckgo = search.get_dict()
-    
+    ddg_search = GoogleSearch(ddg_params)
+    results_duckduckgo = ddg_search.get_dict()
+
+    # Bing Search
+    bing_params = {
+        "engine": "bing",
+        "q": query,
+        "kl": "in-en",
+        "api_key": "09ea60bb38a064c32931c85dec18237f9e6188a3c5fd7c13ca4955b6f869d75b"
+    }
+    bing_search = GoogleSearch(bing_params)
+    results_bing = bing_search.get_dict()
+
     # Decode and parse the Google search results
     try:
         results_google = json.loads(raw_data_google.decode("utf-8"))
@@ -62,7 +71,6 @@ def submit():
 
 
     # DuckDuckGo filter
-    ddg_results_filtered = []
     if 'organic_results' in results_duckduckgo:
         for index,item in enumerate(results_duckduckgo['organic_results']):
             if isinstance(item, dict):
@@ -72,12 +80,25 @@ def submit():
                 if link and snippet:  # Check if both link and snippet are present
                     google_results_filtered.append({"link": link, "snippet": snippet, "title": title, "source":"duckduckgo","index":index})
 
+
+    # Bing results
+    if 'organic_results' in results_bing:
+        for index,item in enumerate(results_bing['organic_results']):
+            if isinstance(item, dict):
+                link = item.get('link')
+                snippet = item.get('snippet')
+                title = item.get('title')
+                if link and snippet:  # Check if both link and snippet are present
+                    google_results_filtered.append({"link": link, "snippet": snippet, "title": title, "source":"duckduckgo","index":index})
+
+
     # Combine results into a single response
     combined_results = {
         "results":google_results_filtered
     }
 
-    output_results = rf(query, combined_results)
+    output_results = rf.return_results(query, combined_results)
+    
     return jsonify(output_results)
 
 if __name__ == '__main__':
