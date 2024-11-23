@@ -61,44 +61,50 @@ def calculate_map(results_data, ground_truth_data):
 
     return total_ap / num_queries if num_queries > 0 else 0.0
 
+def calculate_f1(precision, recall):
+    if precision + recall == 0:
+        return 0.0  # Avoid division by zero
+    return 2 * (precision * recall) / (precision + recall)
 
-# Evaluate Precision, Recall, MAP
+
+# Evaluate Precision, Recall, F1, MAP
 precision_list = []
 recall_list = []
+f1_list = []
 ap_list = []
 
 for query_result in results_data:
-    # print(query_result)
     query = query_result['query']
     retrieved_docs = [doc['link'] for doc in query_result['results']]
 
     # Find the relevant documents for this query in ground truth data
-    # Renaming: We use descriptive names for ground_truth_data and the result's link
-    relevant_docs = list(result['link'] for ground_truth in ground_truth_data if ground_truth['query'] == query for result in
-                   ground_truth['results'])
-    # print('q', ':', query_match)
-    # Extract Variable: Make the generator expression clearer by breaking it down
-    # relevant_docs = next(query_match, [])
+    relevant_docs = list(result['link'] for ground_truth in ground_truth_data if ground_truth['query'] == query for result in ground_truth['results'])
 
     # Calculate Precision and Recall for this query
     precision, recall = calculate_precision_recall(retrieved_docs, relevant_docs)
     precision_list.append(precision)
     recall_list.append(recall)
 
+    # Calculate F1 score for this query
+    f1 = calculate_f1(precision, recall)
+    f1_list.append(f1)
+
     # Calculate Average Precision for this query
     ap = calculate_average_precision(retrieved_docs, relevant_docs)
-    print(f'For query: \'{query}\'')
-    print(precision, recall, ap)
+    print(f"For query: '{query}'")
+    print(f"Precision: {precision:.4f}, Recall: {recall:.4f}, F1: {f1:.4f}, AP: {ap:.4f}")
     ap_list.append(ap)
 
 # Calculate MAP (Mean Average Precision)
 map_score = sum(ap_list) / len(ap_list) if ap_list else 0.0
 
-# Calculate Mean Precision and Mean Recall
+# Calculate Mean Precision, Mean Recall, and Mean F1 Score
 mean_precision = sum(precision_list) / len(precision_list) if precision_list else 0.0
 mean_recall = sum(recall_list) / len(recall_list) if recall_list else 0.0
+mean_f1 = sum(f1_list) / len(f1_list) if f1_list else 0.0
 
 # Print the results
 print(f"Mean Precision: {mean_precision:.4f}")
 print(f"Mean Recall: {mean_recall:.4f}")
+print(f"Mean F1 Score: {mean_f1:.4f}")
 print(f"Mean Average Precision (MAP): {map_score:.4f}")
